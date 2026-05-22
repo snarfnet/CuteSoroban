@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "CatBeadCalico.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

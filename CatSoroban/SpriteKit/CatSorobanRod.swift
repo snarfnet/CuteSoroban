@@ -1,6 +1,6 @@
 import SpriteKit
 
-class CuteSorobanRod {
+class CatSorobanRod {
     let index: Int
     let x: CGFloat
     let beamY: CGFloat
@@ -10,8 +10,8 @@ class CuteSorobanRod {
     let beadHeight: CGFloat
     let beadSpacing: CGFloat
 
-    var heavenBeads: [CuteBeadNode] = []
-    var earthBeads: [CuteBeadNode] = []
+    var heavenBeads: [CatBeadNode] = []
+    var earthBeads: [CatBeadNode] = []
     var heavenActive: [Bool] = [false]
     var earthActive: [Bool] = [false, false, false, false]
 

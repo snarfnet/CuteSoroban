@@ -3,22 +3,22 @@ import SpriteKit
 
 struct ContentView: View {
     @StateObject private var sorobanState = SorobanState()
-    @State private var scene = CuteSorobanScene(size: .zero)
+    @State private var scene = CatSorobanScene(size: .zero)
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                Image("CrystalBackground")
+                Image("CatBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                    .overlay(Color.white.opacity(0.18).ignoresSafeArea())
+                    .overlay(Color.white.opacity(0.10).ignoresSafeArea())
 
                 LinearGradient(
                     colors: [
                         Color.white.opacity(0.10),
-                        Color(red: 1.0, green: 0.78, blue: 0.88).opacity(0.20),
-                        Color(red: 0.74, green: 0.92, blue: 1.0).opacity(0.14)
+                        Color(red: 1.0, green: 0.74, blue: 0.84).opacity(0.18),
+                        Color(red: 1.0, green: 0.88, blue: 0.70).opacity(0.12)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -51,7 +51,7 @@ struct ContentView: View {
                     LinearGradient(
                         colors: [
                             Color(red: 0.95, green: 0.35, blue: 0.62),
-                            Color(red: 0.46, green: 0.62, blue: 0.98)
+                            Color(red: 0.92, green: 0.55, blue: 0.26)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -82,7 +82,7 @@ struct ContentView: View {
     private var bottomBar: some View {
         HStack {
             Button {
-                NotificationCenter.default.post(name: .cutesorobanReset, object: nil)
+                NotificationCenter.default.post(name: .catSorobanReset, object: nil)
                 sorobanState.displayValue = "0"
             } label: {
                 HStack(spacing: 6) {
@@ -119,7 +119,7 @@ struct ContentView: View {
         .background(Color.white.opacity(0.58))
     }
 
-    private func configuredScene(size: CGSize) -> CuteSorobanScene {
+    private func configuredScene(size: CGSize) -> CatSorobanScene {
         if scene.size != size {
             scene.size = size
         }
@@ -134,5 +134,5 @@ class SorobanState: ObservableObject {
 }
 
 extension Notification.Name {
-    static let cutesorobanReset = Notification.Name("cutesorobanReset")
+    static let catSorobanReset = Notification.Name("catSorobanReset")
 }

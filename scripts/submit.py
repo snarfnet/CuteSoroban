@@ -4,7 +4,8 @@ import jwt, time, requests, sys, os
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "WDXGY9WX55")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID", "2be0734f-943a-4d61-9dc9-5d9045c46fec")
-BUNDLE_ID = "com.snarfnet.cutesoroban"
+BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.catsoroban")
+APP_ID = os.environ.get("ASC_APP_ID", "6772199409")
 
 def get_token():
     key_paths = [
@@ -28,13 +29,19 @@ def main():
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     build_number = sys.argv[1] if len(sys.argv) > 1 else None
 
-    r = requests.get(f"https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]={BUNDLE_ID}", headers=headers)
-    r.raise_for_status()
-    apps = r.json()["data"]
-    if not apps:
-        print(f"App not found: {BUNDLE_ID}")
-        return
-    app_id = apps[0]["id"]
+    if APP_ID:
+        r = requests.get(f"https://api.appstoreconnect.apple.com/v1/apps/{APP_ID}", headers=headers)
+        r.raise_for_status()
+        app_id = APP_ID
+    else:
+        r = requests.get(f"https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]={BUNDLE_ID}", headers=headers)
+        r.raise_for_status()
+        apps = r.json()["data"]
+        if not apps:
+            print(f"App not found: {BUNDLE_ID}")
+            print("Create the app in App Store Connect first, then upload a build.")
+            return 2
+        app_id = apps[0]["id"]
     print(f"App ID: {app_id}")
 
     url = f"https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-uploadedDate&limit=5"
@@ -71,7 +78,7 @@ def main():
 
     if not target_build:
         print("Build not ready after 10 minutes")
-        return
+        return 3
 
     build_id = target_build["id"]
     print(f"Using build: {target_build['attributes'].get('version')} ({build_id})")
@@ -83,7 +90,7 @@ def main():
         version_id = versions[0]["id"]
     else:
         print("No PREPARE_FOR_SUBMISSION version found")
-        return
+        return 4
 
     r = requests.patch(
         f"https://api.appstoreconnect.apple.com/v1/appStoreVersions/{version_id}/relationships/build",
@@ -127,8 +134,10 @@ def main():
             json={"data": {"type": "reviewSubmissions", "id": sub_id, "attributes": {"submitted": True}}}
         )
         print("Submitted for review!")
+        return 0
     else:
         print(r.text[:500])
+        return 5
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,14 +1,14 @@
 import SpriteKit
 
-class CuteSorobanScene: SKScene {
+class CatSorobanScene: SKScene {
 
     private let rodCount = 13
     private let earthBeadsPerRod = 4
 
     weak var sorobanState: SorobanState?
-    private var rods: [CuteSorobanRod] = []
+    private var rods: [CatSorobanRod] = []
     private var soundManager = SoundManager()
-    private var draggedBead: CuteBeadNode?
+    private var draggedBead: CatBeadNode?
     private var activeTouch: UITouch?
     private var dragStartY: CGFloat = 0
     private var didRegisterNotifications = false
@@ -87,16 +87,16 @@ class CuteSorobanScene: SKScene {
     // MARK: - Cute Background
 
     private func buildBackground() {
-        let bg = SKSpriteNode(imageNamed: "CrystalBackground")
+        let bg = SKSpriteNode(imageNamed: "CatBackground")
         let scale = max(size.width / max(bg.size.width, 1), size.height / max(bg.size.height, 1))
         bg.size = CGSize(width: bg.size.width * scale, height: bg.size.height * scale)
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        bg.alpha = 0.62
+        bg.alpha = 0.82
         bg.zPosition = -20
         addChild(bg)
 
         let wash = SKShapeNode(rect: CGRect(origin: .zero, size: size))
-        wash.fillColor = SKColor(white: 1, alpha: 0.22)
+        wash.fillColor = SKColor(white: 1, alpha: 0.10)
         wash.strokeColor = .clear
         wash.zPosition = -19
         addChild(wash)
@@ -133,13 +133,13 @@ class CuteSorobanScene: SKScene {
         let beamThickness: CGFloat = 8
 
         let shadow = SKShapeNode(rect: frameRect.offsetBy(dx: 0, dy: -3), cornerRadius: 16)
-        shadow.fillColor = SKColor(red: 0.88, green: 0.52, blue: 0.72, alpha: 0.18)
+        shadow.fillColor = SKColor(red: 0.78, green: 0.42, blue: 0.50, alpha: 0.16)
         shadow.strokeColor = .clear
         shadow.zPosition = -2
         addChild(shadow)
 
         let bg = SKShapeNode(rect: frameRect.insetBy(dx: frameThickness / 2, dy: frameThickness / 2), cornerRadius: 14)
-        bg.fillColor = SKColor(red: 1.0, green: 0.965, blue: 0.985, alpha: 0.86)
+        bg.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.965, alpha: 0.70)
         bg.strokeColor = SKColor(white: 1.0, alpha: 0.5)
         bg.lineWidth = 1
         bg.zPosition = 0
@@ -195,8 +195,8 @@ class CuteSorobanScene: SKScene {
             path.move(to: CGPoint(x: x, y: bottomFrameY + 6))
             path.addLine(to: CGPoint(x: x, y: topFrameY - 6))
             rod.path = path
-            rod.strokeColor = SKColor(red: 0.82, green: 0.78, blue: 0.88, alpha: 0.72)
-            rod.lineWidth = 1.8
+            rod.strokeColor = SKColor(red: 0.96, green: 0.58, blue: 0.16, alpha: 0.95)
+            rod.lineWidth = 2.4
             rod.zPosition = 1
             addChild(rod)
 
@@ -205,7 +205,7 @@ class CuteSorobanScene: SKScene {
             gp.move(to: CGPoint(x: x - 0.5, y: bottomFrameY + 10))
             gp.addLine(to: CGPoint(x: x - 0.5, y: topFrameY - 10))
             glint.path = gp
-            glint.strokeColor = SKColor(white: 1.0, alpha: 0.32)
+            glint.strokeColor = SKColor(red: 1.0, green: 0.92, blue: 0.55, alpha: 0.45)
             glint.lineWidth = 0.6
             glint.zPosition = 2
             addChild(glint)
@@ -218,13 +218,13 @@ class CuteSorobanScene: SKScene {
         rods = []
         for i in 0..<rodCount {
             let x = rodStartX + CGFloat(i) * rodSpacing
-            let rod = CuteSorobanRod(
+            let rod = CatSorobanRod(
                 index: i, x: x, beamY: beamY, topY: heavenTopY, bottomY: earthBottomY,
                 beadWidth: beadWidth, beadHeight: beadHeight, beadSpacing: beadSpacing
             )
             rods.append(rod)
 
-            let heavenBead = CuteBeadNode.create(
+            let heavenBead = CatBeadNode.create(
                 width: beadWidth, height: beadHeight, isHeaven: true, rodIndex: i, beadIndex: 0
             )
             heavenBead.position = rod.heavenRestPosition(active: false)
@@ -233,7 +233,7 @@ class CuteSorobanScene: SKScene {
             rod.heavenBeads.append(heavenBead)
 
             for j in 0..<earthBeadsPerRod {
-                let earthBead = CuteBeadNode.create(
+                let earthBead = CatBeadNode.create(
                     width: beadWidth, height: beadHeight, isHeaven: false, rodIndex: i, beadIndex: j
                 )
                 earthBead.position = rod.earthRestPosition(index: j, active: false)
@@ -320,7 +320,7 @@ class CuteSorobanScene: SKScene {
 
     // MARK: - Bead Movement
 
-    private func moveHeavenBead(rod: CuteSorobanRod, active: Bool) {
+    private func moveHeavenBead(rod: CatSorobanRod, active: Bool) {
         guard rod.heavenActive[0] != active else { return }
         rod.heavenActive[0] = active
         let bead = rod.heavenBeads[0]
@@ -337,7 +337,7 @@ class CuteSorobanScene: SKScene {
         updateValue()
     }
 
-    private func moveEarthBead(rod: CuteSorobanRod, index: Int, active: Bool) {
+    private func moveEarthBead(rod: CatSorobanRod, index: Int, active: Bool) {
         guard rod.earthActive[index] != active else { return }
         rod.earthActive[index] = active
         let bead = rod.earthBeads[index]
@@ -354,7 +354,7 @@ class CuteSorobanScene: SKScene {
         updateValue()
     }
 
-    private func moveEarthBeads(rod: CuteSorobanRod, touchedIndex: Int, active: Bool) {
+    private func moveEarthBeads(rod: CatSorobanRod, touchedIndex: Int, active: Bool) {
         var changed = false
         let indices: [Int] = active
             ? Array(touchedIndex..<earthBeadsPerRod)
@@ -371,7 +371,7 @@ class CuteSorobanScene: SKScene {
         }
     }
 
-    private func moveEarthBeadSilently(rod: CuteSorobanRod, index: Int, active: Bool) {
+    private func moveEarthBeadSilently(rod: CatSorobanRod, index: Int, active: Bool) {
         rod.earthActive[index] = active
         let bead = rod.earthBeads[index]
         let target = rod.earthRestPosition(index: index, active: active)
@@ -427,23 +427,28 @@ class CuteSorobanScene: SKScene {
         guard !didRegisterNotifications else { return }
         didRegisterNotifications = true
         NotificationCenter.default.addObserver(
-            forName: .cutesorobanReset, object: nil, queue: .main
+            forName: .catSorobanReset, object: nil, queue: .main
         ) { [weak self] _ in
             self?.resetSoroban()
         }
     }
 
-    private func bead(at location: CGPoint) -> CuteBeadNode? {
-        for node in nodes(at: location) {
-            var current: SKNode? = node
-            while let candidate = current {
-                if let bead = candidate as? CuteBeadNode {
-                    return bead
-                }
-                current = candidate.parent
+    private func bead(at location: CGPoint) -> CatBeadNode? {
+        let allBeads = rods.flatMap { $0.heavenBeads + $0.earthBeads }
+        var nearest: CatBeadNode?
+        var nearestDistance = CGFloat.greatestFiniteMagnitude
+
+        for bead in allBeads {
+            guard bead.stableHitFrame.contains(location) else { continue }
+            let dx = bead.position.x - location.x
+            let dy = bead.position.y - location.y
+            let distance = dx * dx + dy * dy
+            if distance < nearestDistance {
+                nearest = bead
+                nearestDistance = distance
             }
         }
-        return nil
+        return nearest
     }
 
     private func restore(_ snapshot: [([Bool], [Bool])]) {

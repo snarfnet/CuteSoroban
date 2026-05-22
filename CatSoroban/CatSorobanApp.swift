@@ -2,7 +2,7 @@ import SwiftUI
 import GoogleMobileAds
 
 @main
-struct CuteSorobanApp: App {
+struct CatSorobanApp: App {
     init() {
         MobileAds.shared.start()
     }

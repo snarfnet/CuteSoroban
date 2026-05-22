@@ -36,17 +36,17 @@ jobs:
       - name: Resolve packages
         run: |
           xcodebuild -resolvePackageDependencies \
-            -project CuteSoroban.xcodeproj \
-            -scheme CuteSoroban
+            -project CatSoroban.xcodeproj \
+            -scheme CatSoroban
 
       - name: Archive
         run: |
           xcodebuild archive \
-            -project CuteSoroban.xcodeproj \
-            -scheme CuteSoroban \
+            -project CatSoroban.xcodeproj \
+            -scheme CatSoroban \
             -configuration Release \
             -destination "generic/platform=iOS" \
-            -archivePath build/CuteSoroban.xcarchive \
+            -archivePath build/CatSoroban.xcarchive \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=83VGKGSQUH \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
@@ -58,7 +58,7 @@ jobs:
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
-            -archivePath build/CuteSoroban.xcarchive \
+            -archivePath build/CatSoroban.xcarchive \
             -exportPath build/export \
             -exportOptionsPlist export_options.plist \
             -allowProvisioningUpdates \
