@@ -9,7 +9,9 @@ class CuteSorobanScene: SKScene {
     private var rods: [CuteSorobanRod] = []
     private var soundManager = SoundManager()
     private var draggedBead: CuteBeadNode?
+    private var activeTouch: UITouch?
     private var dragStartY: CGFloat = 0
+    private var didRegisterNotifications = false
 
     private var frameRect = CGRect.zero
     private var beamY: CGFloat = 0
@@ -26,16 +28,33 @@ class CuteSorobanScene: SKScene {
     // MARK: - Lifecycle
 
     override func didMove(to view: SKView) {
-        backgroundColor = SKColor(red: 1.0, green: 0.96, blue: 0.97, alpha: 1) // soft pink-white
+        backgroundColor = .clear
+        view.backgroundColor = .clear
+        view.allowsTransparency = true
+        view.isMultipleTouchEnabled = false
+        rebuildSoroban()
+        observeNotifications()
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        guard oldSize != size, view != nil else { return }
+        let snapshot = rods.map { ($0.heavenActive, $0.earthActive) }
+        rebuildSoroban(restoring: snapshot)
+    }
+
+    private func rebuildSoroban(restoring snapshot: [([Bool], [Bool])] = []) {
+        removeAllChildren()
         calculateLayout()
         buildBackground()
         buildFrame()
         buildRods()
-        observeNotifications()
+        restore(snapshot)
+        updateValue()
     }
 
     override func willMove(from view: SKView) {
         NotificationCenter.default.removeObserver(self)
+        didRegisterNotifications = false
     }
 
     // MARK: - Layout
@@ -68,25 +87,37 @@ class CuteSorobanScene: SKScene {
     // MARK: - Cute Background
 
     private func buildBackground() {
-        // Scattered tiny hearts / stars
-        let decorations = ["heart.fill", "star.fill", "sparkle"]
-        for i in 0..<18 {
+        let bg = SKSpriteNode(imageNamed: "CrystalBackground")
+        let scale = max(size.width / max(bg.size.width, 1), size.height / max(bg.size.height, 1))
+        bg.size = CGSize(width: bg.size.width * scale, height: bg.size.height * scale)
+        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        bg.alpha = 0.62
+        bg.zPosition = -20
+        addChild(bg)
+
+        let wash = SKShapeNode(rect: CGRect(origin: .zero, size: size))
+        wash.fillColor = SKColor(white: 1, alpha: 0.22)
+        wash.strokeColor = .clear
+        wash.zPosition = -19
+        addChild(wash)
+
+        for i in 0..<30 {
             let seed = Double(i)
             let x = pseudo(seed, 127.1, 311.7) * size.width
             let y = pseudo(seed, 269.5, 183.3) * size.height
-            let sz = pseudo(seed, 78.23, 91.4) * 8 + 4
-            let alpha = pseudo(seed, 42.17, 17.9) * 0.12 + 0.04
+            let sz = pseudo(seed, 78.23, 91.4) * 5 + 2
+            let alpha = pseudo(seed, 42.17, 17.9) * 0.22 + 0.08
 
             let circle = SKShapeNode(circleOfRadius: sz)
             circle.position = CGPoint(x: x, y: y)
             circle.fillColor = SKColor(
-                red: CGFloat(0.9 + pseudo(seed, 13.0, 7.0) * 0.1),
-                green: CGFloat(0.7 + pseudo(seed, 23.0, 11.0) * 0.2),
-                blue: CGFloat(0.8 + pseudo(seed, 31.0, 17.0) * 0.2),
+                red: CGFloat(0.92 + pseudo(seed, 13.0, 7.0) * 0.08),
+                green: CGFloat(0.82 + pseudo(seed, 23.0, 11.0) * 0.16),
+                blue: CGFloat(0.92 + pseudo(seed, 31.0, 17.0) * 0.08),
                 alpha: CGFloat(alpha)
             )
             circle.strokeColor = .clear
-            circle.zPosition = -5
+            circle.zPosition = -10
             addChild(circle)
         }
     }
@@ -101,46 +132,41 @@ class CuteSorobanScene: SKScene {
         let frameThickness: CGFloat = 10
         let beamThickness: CGFloat = 8
 
-        // Soft shadow
         let shadow = SKShapeNode(rect: frameRect.offsetBy(dx: 0, dy: -3), cornerRadius: 16)
-        shadow.fillColor = SKColor(red: 0.8, green: 0.7, blue: 0.85, alpha: 0.18)
+        shadow.fillColor = SKColor(red: 0.88, green: 0.52, blue: 0.72, alpha: 0.18)
         shadow.strokeColor = .clear
         shadow.zPosition = -2
         addChild(shadow)
 
-        // Frame background - soft cream
         let bg = SKShapeNode(rect: frameRect.insetBy(dx: frameThickness / 2, dy: frameThickness / 2), cornerRadius: 14)
-        bg.fillColor = SKColor(red: 1.0, green: 0.98, blue: 0.95, alpha: 1)
-        bg.strokeColor = .clear
+        bg.fillColor = SKColor(red: 1.0, green: 0.965, blue: 0.985, alpha: 0.86)
+        bg.strokeColor = SKColor(white: 1.0, alpha: 0.5)
+        bg.lineWidth = 1
         bg.zPosition = 0
         addChild(bg)
 
-        // Frame border - pastel pink
         let border = SKShapeNode(rect: frameRect, cornerRadius: 16)
-        border.strokeColor = SKColor(red: 1.0, green: 0.75, blue: 0.80, alpha: 1)
+        border.strokeColor = SKColor(red: 1.0, green: 0.62, blue: 0.76, alpha: 1)
         border.lineWidth = frameThickness
         border.fillColor = .clear
         border.zPosition = 5
         addChild(border)
 
-        // Inner glow line
         let inner = SKShapeNode(rect: frameRect.insetBy(dx: frameThickness * 0.6, dy: frameThickness * 0.6), cornerRadius: 12)
-        inner.strokeColor = SKColor(white: 1.0, alpha: 0.55)
+        inner.strokeColor = SKColor(white: 1.0, alpha: 0.75)
         inner.lineWidth = 1.5
         inner.fillColor = .clear
         inner.zPosition = 6
         addChild(inner)
 
-        // Beam - pastel lavender
         let beamRect = CGRect(x: frameRect.minX, y: beamY - beamThickness / 2, width: frameRect.width, height: beamThickness)
         let beam = SKShapeNode(rect: beamRect, cornerRadius: 4)
-        beam.fillColor = SKColor(red: 0.85, green: 0.78, blue: 0.95, alpha: 1)
-        beam.strokeColor = SKColor(red: 0.75, green: 0.65, blue: 0.88, alpha: 1)
+        beam.fillColor = SKColor(red: 1.0, green: 0.75, blue: 0.84, alpha: 1)
+        beam.strokeColor = SKColor(red: 0.98, green: 0.52, blue: 0.70, alpha: 0.78)
         beam.lineWidth = 1
         beam.zPosition = 10
         addChild(beam)
 
-        // Beam highlight
         let beamHL = SKShapeNode(rect: CGRect(x: beamRect.minX + 4, y: beamRect.maxY - 1.5, width: beamRect.width - 8, height: 1))
         beamHL.fillColor = SKColor(white: 1.0, alpha: 0.55)
         beamHL.strokeColor = .clear
@@ -174,7 +200,6 @@ class CuteSorobanScene: SKScene {
             rod.zPosition = 1
             addChild(rod)
 
-            // Subtle glint
             let glint = SKShapeNode()
             let gp = CGMutablePath()
             gp.move(to: CGPoint(x: x - 0.5, y: bottomFrameY + 10))
@@ -222,21 +247,18 @@ class CuteSorobanScene: SKScene {
     // MARK: - Touch Handling
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
+        guard activeTouch == nil, let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        let tappedNodes = nodes(at: location)
-        for node in tappedNodes {
-            if let bead = node as? CuteBeadNode ?? node.parent as? CuteBeadNode {
-                draggedBead = bead
-                dragStartY = location.y
-                return
-            }
+        if let bead = bead(at: location) {
+            activeTouch = touch
+            draggedBead = bead
+            dragStartY = location.y
         }
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let bead = draggedBead else { return }
+        guard let touch = activeTouch, touches.contains(touch), let bead = draggedBead else { return }
         let location = touch.location(in: self)
         let deltaY = location.y - dragStartY
 
@@ -256,19 +278,19 @@ class CuteSorobanScene: SKScene {
             let beadIdx = bead.beadIndex
             let targetActive = deltaY > beadHeight * 0.3
             let targetInactive = deltaY < -beadHeight * 0.3
-            if targetActive && !rod.earthActive[beadIdx] {
-                moveEarthBead(rod: rod, index: beadIdx, active: true)
+            if targetActive {
+                moveEarthBeads(rod: rod, touchedIndex: beadIdx, active: true)
                 dragStartY = location.y
-            } else if targetInactive && rod.earthActive[beadIdx] {
-                moveEarthBead(rod: rod, index: beadIdx, active: false)
+            } else if targetInactive {
+                moveEarthBeads(rod: rod, touchedIndex: beadIdx, active: false)
                 dragStartY = location.y
             }
         }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = activeTouch, touches.contains(touch) else { return }
         if let bead = draggedBead {
-            guard let touch = touches.first else { draggedBead = nil; return }
             let location = touch.location(in: self)
             let deltaY = abs(location.y - dragStartY)
 
@@ -281,11 +303,19 @@ class CuteSorobanScene: SKScene {
                     moveHeavenBead(rod: rod, active: !rod.heavenActive[0])
                 } else {
                     let beadIdx = bead.beadIndex
-                    moveEarthBead(rod: rod, index: beadIdx, active: !rod.earthActive[beadIdx])
+                    moveEarthBeads(rod: rod, touchedIndex: beadIdx, active: !rod.earthActive[beadIdx])
                 }
             }
         }
+        activeTouch = nil
         draggedBead = nil
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = activeTouch, touches.contains(touch) {
+            activeTouch = nil
+            draggedBead = nil
+        }
     }
 
     // MARK: - Bead Movement
@@ -322,6 +352,36 @@ class CuteSorobanScene: SKScene {
         bead.run(SKAction.group([move, bounce]))
         soundManager.playClick()
         updateValue()
+    }
+
+    private func moveEarthBeads(rod: CuteSorobanRod, touchedIndex: Int, active: Bool) {
+        var changed = false
+        let indices: [Int] = active
+            ? Array(touchedIndex..<earthBeadsPerRod)
+            : Array(0...touchedIndex)
+        for index in indices {
+            if rod.earthActive[index] != active {
+                moveEarthBeadSilently(rod: rod, index: index, active: active)
+                changed = true
+            }
+        }
+        if changed {
+            soundManager.playClick()
+            updateValue()
+        }
+    }
+
+    private func moveEarthBeadSilently(rod: CuteSorobanRod, index: Int, active: Bool) {
+        rod.earthActive[index] = active
+        let bead = rod.earthBeads[index]
+        let target = rod.earthRestPosition(index: index, active: active)
+        let move = SKAction.move(to: target, duration: 0.08)
+        move.timingMode = .easeOut
+        let bounce = SKAction.sequence([
+            SKAction.scale(to: 1.06, duration: 0.04),
+            SKAction.scale(to: 1.0, duration: 0.05)
+        ])
+        bead.run(SKAction.group([move, bounce]))
     }
 
     // MARK: - Value
@@ -364,10 +424,38 @@ class CuteSorobanScene: SKScene {
     }
 
     private func observeNotifications() {
+        guard !didRegisterNotifications else { return }
+        didRegisterNotifications = true
         NotificationCenter.default.addObserver(
             forName: .cutesorobanReset, object: nil, queue: .main
         ) { [weak self] _ in
             self?.resetSoroban()
+        }
+    }
+
+    private func bead(at location: CGPoint) -> CuteBeadNode? {
+        for node in nodes(at: location) {
+            var current: SKNode? = node
+            while let candidate = current {
+                if let bead = candidate as? CuteBeadNode {
+                    return bead
+                }
+                current = candidate.parent
+            }
+        }
+        return nil
+    }
+
+    private func restore(_ snapshot: [([Bool], [Bool])]) {
+        guard snapshot.count == rods.count else { return }
+        for (rodIndex, state) in snapshot.enumerated() {
+            let rod = rods[rodIndex]
+            rod.heavenActive = state.0
+            rod.earthActive = state.1
+            rod.heavenBeads[0].position = rod.heavenRestPosition(active: rod.heavenActive[0])
+            for index in 0..<earthBeadsPerRod {
+                rod.earthBeads[index].position = rod.earthRestPosition(index: index, active: rod.earthActive[index])
+            }
         }
     }
 }

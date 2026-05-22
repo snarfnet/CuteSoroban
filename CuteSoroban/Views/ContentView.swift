@@ -3,16 +3,22 @@ import SpriteKit
 
 struct ContentView: View {
     @StateObject private var sorobanState = SorobanState()
+    @State private var scene = CuteSorobanScene(size: .zero)
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Cute gradient background
+                Image("CrystalBackground")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .overlay(Color.white.opacity(0.18).ignoresSafeArea())
+
                 LinearGradient(
                     colors: [
-                        Color(red: 1.0, green: 0.95, blue: 0.97),
-                        Color(red: 0.96, green: 0.94, blue: 1.0),
-                        Color(red: 1.0, green: 0.97, blue: 0.95)
+                        Color.white.opacity(0.10),
+                        Color(red: 1.0, green: 0.78, blue: 0.88).opacity(0.20),
+                        Color(red: 0.74, green: 0.92, blue: 1.0).opacity(0.14)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -20,20 +26,17 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // Display
                     displayBar
-                        .frame(height: 52)
+                        .frame(height: 62)
 
-                    // Soroban
-                    SpriteView(scene: makeScene(size: CGSize(
+                    SpriteView(scene: configuredScene(size: CGSize(
                         width: geo.size.width,
-                        height: geo.size.height - 52 - 60
+                        height: max(240, geo.size.height - 62 - 64)
                     )), options: [.allowsTransparency])
                     .ignoresSafeArea(edges: .horizontal)
 
-                    // Bottom bar
                     bottomBar
-                        .frame(height: 60)
+                        .frame(height: 64)
                 }
             }
         }
@@ -43,12 +46,12 @@ struct ContentView: View {
         HStack {
             Spacer()
             Text(sorobanState.displayValue)
-                .font(.system(size: 30, weight: .medium, design: .rounded))
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.82, green: 0.55, blue: 0.72),
-                            Color(red: 0.62, green: 0.52, blue: 0.82)
+                            Color(red: 0.95, green: 0.35, blue: 0.62),
+                            Color(red: 0.46, green: 0.62, blue: 0.98)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -61,8 +64,18 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity)
         .background(
-            Color.white.opacity(0.82)
-                .shadow(.inner(color: Color(red: 1.0, green: 0.8, blue: 0.85).opacity(0.4), radius: 8, y: 2))
+            ZStack {
+                Color.white.opacity(0.70)
+                LinearGradient(
+                    colors: [
+                        Color(red: 1.0, green: 0.70, blue: 0.84).opacity(0.22),
+                        Color(red: 0.72, green: 0.90, blue: 1.0).opacity(0.16)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+            .shadow(.inner(color: Color.white.opacity(0.55), radius: 8, y: 2))
         )
     }
 
@@ -78,13 +91,17 @@ struct ContentView: View {
                     Text("Reset")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                 }
-                .foregroundStyle(Color(red: 0.75, green: 0.55, blue: 0.72))
+                .foregroundStyle(Color(red: 0.88, green: 0.34, blue: 0.58))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     Capsule()
-                        .fill(Color.white.opacity(0.85))
-                        .shadow(color: Color(red: 1.0, green: 0.75, blue: 0.82).opacity(0.4), radius: 6, y: 2)
+                        .fill(Color.white.opacity(0.86))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                        )
+                        .shadow(color: Color(red: 1.0, green: 0.48, blue: 0.70).opacity(0.28), radius: 8, y: 3)
                 )
             }
 
@@ -99,11 +116,13 @@ struct ContentView: View {
             Color.clear.frame(width: 80, height: 38)
         }
         .padding(.horizontal, 12)
-        .background(Color.white.opacity(0.62))
+        .background(Color.white.opacity(0.58))
     }
 
-    private func makeScene(size: CGSize) -> CuteSorobanScene {
-        let scene = CuteSorobanScene(size: size)
+    private func configuredScene(size: CGSize) -> CuteSorobanScene {
+        if scene.size != size {
+            scene.size = size
+        }
         scene.scaleMode = .resizeFill
         scene.sorobanState = sorobanState
         return scene

@@ -4,7 +4,7 @@ import GoogleMobileAds
 @main
 struct CuteSorobanApp: App {
     init() {
-        GADMobileAds.sharedInstance().start { _ in }
+        MobileAds.shared.start()
     }
 
     var body: some Scene {

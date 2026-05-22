@@ -12,7 +12,12 @@ class CuteBeadNode: SKNode {
         node.beadIndex = beadIndex
         node.isUserInteractionEnabled = false
 
-        // Soft shadow
+        let hitArea = SKShapeNode(ellipseOf: CGSize(width: width * 1.06, height: height * 1.65))
+        hitArea.fillColor = .clear
+        hitArea.strokeColor = .clear
+        hitArea.zPosition = -10
+        node.addChild(hitArea)
+
         let shadow = SKShapeNode(ellipseOf: CGSize(width: width * 0.8, height: height * 0.3))
         shadow.position = CGPoint(x: 1, y: -height * 0.12)
         shadow.fillColor = SKColor(red: 0.6, green: 0.5, blue: 0.7, alpha: 0.18)
@@ -20,48 +25,90 @@ class CuteBeadNode: SKNode {
         shadow.zPosition = -2
         node.addChild(shadow)
 
-        // Round cute bead (not bicone - round pill shape)
         let beadColor = isHeaven ? CutePalette.heavenBead(rodIndex: rodIndex) : CutePalette.earthBead(rodIndex: rodIndex)
         let borderColor = isHeaven ? CutePalette.heavenBorder(rodIndex: rodIndex) : CutePalette.earthBorder(rodIndex: rodIndex)
 
-        let cornerRadius = min(width, height) * 0.42
-        let rect = CGRect(x: -width / 2, y: -height / 2, width: width, height: height)
-        let shape = SKShapeNode(rect: rect, cornerRadius: cornerRadius)
+        let shape = SKShapeNode(path: crystalPath(width: width, height: height))
         shape.fillColor = beadColor
         shape.strokeColor = borderColor
-        shape.lineWidth = 1.5
+        shape.lineWidth = 1.35
         shape.zPosition = 0
         node.addChild(shape)
 
-        // Glossy highlight (top-left shine)
-        let glossW = width * 0.35
-        let glossH = height * 0.28
-        let gloss = SKShapeNode(ellipseOf: CGSize(width: glossW, height: glossH))
-        gloss.position = CGPoint(x: -width * 0.12, y: height * 0.14)
-        gloss.fillColor = SKColor(white: 1.0, alpha: 0.42)
+        let facet = SKShapeNode(path: facetPath(width: width, height: height))
+        facet.strokeColor = SKColor(white: 1.0, alpha: 0.44)
+        facet.lineWidth = 0.7
+        facet.fillColor = .clear
+        facet.zPosition = 1
+        node.addChild(facet)
+
+        let gloss = SKShapeNode(ellipseOf: CGSize(width: width * 0.28, height: height * 0.22))
+        gloss.position = CGPoint(x: -width * 0.18, y: height * 0.18)
+        gloss.fillColor = SKColor(white: 1.0, alpha: 0.58)
         gloss.strokeColor = .clear
-        gloss.zPosition = 1
+        gloss.zPosition = 2
         node.addChild(gloss)
 
-        // Tiny sparkle on heaven beads
-        if isHeaven {
-            let star = SKShapeNode(circleOfRadius: 2.2)
-            star.position = CGPoint(x: width * 0.18, y: height * 0.08)
-            star.fillColor = SKColor(white: 1.0, alpha: 0.72)
-            star.strokeColor = .clear
-            star.zPosition = 2
-            node.addChild(star)
-        }
+        let sparkle = SKShapeNode(path: sparklePath(radius: isHeaven ? 3.1 : 2.2))
+        sparkle.position = CGPoint(x: width * 0.22, y: height * 0.10)
+        sparkle.fillColor = SKColor(white: 1.0, alpha: isHeaven ? 0.86 : 0.58)
+        sparkle.strokeColor = .clear
+        sparkle.zPosition = 3
+        node.addChild(sparkle)
 
-        // Center hole (cute small dot)
-        let hole = SKShapeNode(circleOfRadius: max(1.4, width * 0.035))
-        hole.fillColor = SKColor(white: 0.0, alpha: 0.12)
-        hole.strokeColor = SKColor(white: 1.0, alpha: 0.18)
+        let hole = SKShapeNode(circleOfRadius: max(1.5, width * 0.036))
+        hole.fillColor = SKColor(red: 0.65, green: 0.36, blue: 0.50, alpha: 0.16)
+        hole.strokeColor = SKColor(white: 1.0, alpha: 0.26)
         hole.lineWidth = 0.5
-        hole.zPosition = 3
+        hole.zPosition = 4
         node.addChild(hole)
 
         return node
+    }
+
+    private static func crystalPath(width: CGFloat, height: CGFloat) -> CGPath {
+        let w = width / 2
+        let h = height / 2
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: -w * 0.72, y: 0))
+        path.addLine(to: CGPoint(x: -w * 0.42, y: h * 0.76))
+        path.addLine(to: CGPoint(x: 0, y: h))
+        path.addLine(to: CGPoint(x: w * 0.42, y: h * 0.76))
+        path.addLine(to: CGPoint(x: w * 0.72, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.42, y: -h * 0.76))
+        path.addLine(to: CGPoint(x: 0, y: -h))
+        path.addLine(to: CGPoint(x: -w * 0.42, y: -h * 0.76))
+        path.closeSubpath()
+        return path
+    }
+
+    private static func facetPath(width: CGFloat, height: CGFloat) -> CGPath {
+        let w = width / 2
+        let h = height / 2
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: -w * 0.42, y: h * 0.76))
+        path.addLine(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.42, y: h * 0.76))
+        path.move(to: CGPoint(x: -w * 0.42, y: -h * 0.76))
+        path.addLine(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.42, y: -h * 0.76))
+        path.move(to: CGPoint(x: -w * 0.72, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.72, y: 0))
+        return path
+    }
+
+    private static func sparklePath(radius: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: radius))
+        path.addLine(to: CGPoint(x: radius * 0.28, y: radius * 0.28))
+        path.addLine(to: CGPoint(x: radius, y: 0))
+        path.addLine(to: CGPoint(x: radius * 0.28, y: -radius * 0.28))
+        path.addLine(to: CGPoint(x: 0, y: -radius))
+        path.addLine(to: CGPoint(x: -radius * 0.28, y: -radius * 0.28))
+        path.addLine(to: CGPoint(x: -radius, y: 0))
+        path.addLine(to: CGPoint(x: -radius * 0.28, y: radius * 0.28))
+        path.closeSubpath()
+        return path
     }
 }
 
