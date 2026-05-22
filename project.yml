@@ -27,7 +27,7 @@ settings:
     INFOPLIST_KEY_CFBundleDisplayName: "Cute Soroban"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.education"
     INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
-    INFOPLIST_KEY_GADApplicationIdentifier: "ca-app-pub-9404799280370656~PLACEHOLDER"
+    INFOPLIST_KEY_GADApplicationIdentifier: "ca-app-pub-9404799280370656~2139296954"
 
 targets:
   CuteSoroban:
