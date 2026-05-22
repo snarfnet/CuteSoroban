@@ -1,0 +1,8 @@
+*.xcodeproj
+xcuserdata/
+build/
+DerivedData/
+.DS_Store
+*.ipa
+node_modules/
+.omc/
