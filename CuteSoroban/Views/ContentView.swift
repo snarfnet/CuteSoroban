@@ -75,7 +75,7 @@ struct ContentView: View {
                     endPoint: .trailing
                 )
             }
-            .shadow(.inner(color: Color.white.opacity(0.55), radius: 8, y: 2))
+            .shadow(color: Color.white.opacity(0.55), radius: 8, y: 2)
         )
     }
 
