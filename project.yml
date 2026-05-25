@@ -25,7 +25,7 @@ settings:
     INFOPLIST_KEY_UILaunchScreen_Generation: YES
     INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
     INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-    INFOPLIST_KEY_CFBundleDisplayName: "Cat Soroban"
+    INFOPLIST_KEY_CFBundleDisplayName: "Cute Soroban"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.education"
     INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
     INFOPLIST_KEY_GADApplicationIdentifier: "ca-app-pub-9404799280370656~3553970880"
@@ -39,7 +39,7 @@ targets:
       - CatSoroban
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.snarfnet.catsoroban
+        PRODUCT_BUNDLE_IDENTIFIER: com.snarfnet.cutesoroban
         TARGETED_DEVICE_FAMILY: "1,2"
     dependencies:
       - package: GoogleMobileAds
