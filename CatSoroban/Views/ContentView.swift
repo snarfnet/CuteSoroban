@@ -3,7 +3,7 @@ import SpriteKit
 
 struct ContentView: View {
     @StateObject private var sorobanState = SorobanState()
-    @State private var scene = CatSorobanScene(size: .zero)
+    @State private var scene = CatSorobanScene(size: CGSize(width: 800, height: 400))
 
     var body: some View {
         GeometryReader { geo in

@@ -6,10 +6,6 @@ import AppTrackingTransparency
 struct CatSorobanApp: App {
     @State private var attRequested = false
 
-    init() {
-        MobileAds.shared.start()
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -18,7 +14,11 @@ struct CatSorobanApp: App {
                     guard !attRequested else { return }
                     attRequested = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        ATTrackingManager.requestTrackingAuthorization { _ in }
+                        ATTrackingManager.requestTrackingAuthorization { _ in
+                            DispatchQueue.main.async {
+                                MobileAds.shared.start()
+                            }
+                        }
                     }
                 }
         }
