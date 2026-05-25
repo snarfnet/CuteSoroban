@@ -8,7 +8,7 @@ struct BannerAdView: UIViewRepresentable {
         let banner = BannerView(adSize: AdSizeBanner)
         banner.adUnitID = adUnitID
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
+           let rootVC = windowScene.keyWindow?.rootViewController {
             banner.rootViewController = rootVC
         }
         banner.load(Request())

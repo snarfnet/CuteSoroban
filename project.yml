@@ -29,6 +29,7 @@ settings:
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.education"
     INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
     INFOPLIST_KEY_GADApplicationIdentifier: "ca-app-pub-9404799280370656~3553970880"
+    INFOPLIST_KEY_NSUserTrackingUsageDescription: "広告の最適化のため、トラッキングの許可をお願いしています。"
 
 targets:
   CatSoroban:
