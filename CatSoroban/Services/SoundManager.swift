@@ -62,7 +62,7 @@ final class SoundManager {
             let softHarmonic = 0.34 * sin(2.0 * .pi * frequency * 2.02 * t)
             let purr = 0.10 * sin(2.0 * .pi * 82.0 * t) * (1.0 - progress)
             let sample = Float((voice + softHarmonic + purr) * envelope * 0.22)
-            for ch in 0..<Int(format?.channelCount ?? 2) {
+            for ch in 0..<Int(format.channelCount) {
                 channelData[ch][frame] = sample
             }
         }
