@@ -5,7 +5,7 @@ final class SoundManager {
     private var resetID: SystemSoundID = 0
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
-    private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)
+    private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)
     private var useHaptics = true
 
     init() {
@@ -46,7 +46,7 @@ final class SoundManager {
         let duration = 0.28
         let frameCount = AVAudioFrameCount(sampleRate * duration)
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),
-              let channel = buffer.floatChannelData?[0] else {
+              let channelData = buffer.floatChannelData else {
             return
         }
 
@@ -61,7 +61,10 @@ final class SoundManager {
             let voice = sin(2.0 * .pi * frequency * t)
             let softHarmonic = 0.34 * sin(2.0 * .pi * frequency * 2.02 * t)
             let purr = 0.10 * sin(2.0 * .pi * 82.0 * t) * (1.0 - progress)
-            channel[frame] = Float((voice + softHarmonic + purr) * envelope * 0.22)
+            let sample = Float((voice + softHarmonic + purr) * envelope * 0.22)
+            for ch in 0..<Int(format!.channelCount) {
+                channelData[ch][frame] = sample
+            }
         }
 
         player.stop()
