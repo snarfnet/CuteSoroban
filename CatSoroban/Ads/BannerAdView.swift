@@ -24,7 +24,9 @@ private struct BannerViewContainer: UIViewRepresentable {
         let banner = BannerView(adSize: adSize)
         banner.adUnitID = adUnitID
         banner.rootViewController = UIApplication.shared.topViewController
-        banner.load(Request())
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            banner.load(Request())
+        }
         return banner
     }
 

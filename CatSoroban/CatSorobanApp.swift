@@ -11,7 +11,7 @@ struct CatSorobanApp: App {
             ContentView()
                 .preferredColorScheme(.light)
                 .onAppear {
-                    MobileAds.shared.start()
+                    Task { await MobileAds.shared.start() }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     guard !attRequested else { return }
