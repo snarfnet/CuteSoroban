@@ -3,14 +3,14 @@ import UIKit
 
 final class SoundManager {
     private var resetID: SystemSoundID = 0
-    private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    private var engine: AVAudioEngine?
+    private var player: AVAudioPlayerNode?
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)
     private var useHaptics = true
+    private var isSetup = false
 
     init() {
         resetID = 1105
-        setupAudioEngine()
     }
 
     func playClick() {
@@ -28,16 +28,23 @@ final class SoundManager {
     }
 
     private func setupAudioEngine() {
-        guard let format else { return }
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
+        guard !isSetup, let format else { return }
+        isSetup = true
+        let eng = AVAudioEngine()
+        let pl = AVAudioPlayerNode()
+        eng.attach(pl)
+        eng.connect(pl, to: eng.mainMixerNode, format: format)
         try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
-        try? engine.start()
+        try? eng.start()
+        engine = eng
+        player = pl
     }
 
     private func playMeow() {
         guard let format else { return }
+        setupAudioEngine()
+        guard let engine, let player else { return }
         if !engine.isRunning {
             try? engine.start()
         }
