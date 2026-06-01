@@ -42,6 +42,6 @@ private extension UIApplication {
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }
             ?? connectedScenes.compactMap({ $0 as? UIWindowScene }).first
-        return scene?.keyWindow?.rootViewController
+        return scene?.windows.first(where: \.isKeyWindow)?.rootViewController
     }
 }
