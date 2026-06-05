@@ -2,25 +2,17 @@ import SwiftUI
 import GoogleMobileAds
 import AppTrackingTransparency
 
-class AppDelegate: NSObject, UIApplicationDelegate {
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        DispatchQueue.main.async {
-            MobileAds.shared.start { _ in }
-        }
-        return true
-    }
-}
-
 @main
 struct CatSorobanApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var attRequested = false
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.light)
+                .task {
+                    _ = await MobileAds.shared.start()
+                }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     guard !attRequested else { return }
                     attRequested = true
