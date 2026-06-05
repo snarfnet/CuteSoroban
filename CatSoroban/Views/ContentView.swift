@@ -2,6 +2,7 @@ import SwiftUI
 import SpriteKit
 
 struct ContentView: View {
+    let adsReady: Bool
     @StateObject private var sorobanState = SorobanState()
     @State private var scene = CatSorobanScene(size: CGSize(width: 800, height: 400))
 
@@ -108,8 +109,10 @@ struct ContentView: View {
             Spacer()
 
             // Ad banner
-            BannerAdView(adUnitID: AdConfig.bannerAdUnitID)
-                .frame(width: 320, height: 50)
+            if adsReady {
+                BannerAdView(adUnitID: AdConfig.bannerAdUnitID)
+                    .frame(width: 320, height: 50)
+            }
 
             Spacer()
 

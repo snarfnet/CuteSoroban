@@ -5,13 +5,15 @@ import AppTrackingTransparency
 @main
 struct CatSorobanApp: App {
     @State private var attRequested = false
+    @State private var adsReady = false
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(adsReady: adsReady)
                 .preferredColorScheme(.light)
                 .task {
                     _ = await MobileAds.shared.start()
+                    adsReady = true
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     guard !attRequested else { return }
