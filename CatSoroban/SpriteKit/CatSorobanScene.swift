@@ -49,6 +49,7 @@ class CatSorobanScene: SKScene {
         buildFrame()
         buildRods()
         restore(snapshot)
+        applyScreenshotPresetIfNeeded()
         updateValue()
     }
 
@@ -460,6 +461,39 @@ class CatSorobanScene: SKScene {
             rod.heavenBeads[0].position = rod.heavenRestPosition(active: rod.heavenActive[0])
             for index in 0..<earthBeadsPerRod {
                 rod.earthBeads[index].position = rod.earthRestPosition(index: index, active: rod.earthActive[index])
+            }
+        }
+    }
+
+    private func applyScreenshotPresetIfNeeded() {
+        guard let argument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot-preset=") }) else {
+            return
+        }
+
+        let preset = argument.replacingOccurrences(of: "--screenshot-preset=", with: "")
+        let digits: [Int]
+        switch preset {
+        case "practice":
+            digits = [0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6]
+        case "full":
+            digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3]
+        default:
+            digits = []
+        }
+
+        guard digits.count == rods.count else { return }
+        for (index, value) in digits.enumerated() {
+            let rod = rods[index]
+            rod.heavenActive[0] = value >= 5
+            for beadIndex in 0..<earthBeadsPerRod {
+                rod.earthActive[beadIndex] = beadIndex < value % 5
+            }
+            rod.heavenBeads[0].position = rod.heavenRestPosition(active: rod.heavenActive[0])
+            for beadIndex in 0..<earthBeadsPerRod {
+                rod.earthBeads[beadIndex].position = rod.earthRestPosition(
+                    index: beadIndex,
+                    active: rod.earthActive[beadIndex]
+                )
             }
         }
     }

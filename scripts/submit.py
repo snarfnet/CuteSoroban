@@ -4,7 +4,7 @@ import jwt, time, requests, sys, os
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "WDXGY9WX55")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID", "2be0734f-943a-4d61-9dc9-5d9045c46fec")
-BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.catsoroban")
+BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.cutesoroban")
 APP_ID = os.environ.get("ASC_APP_ID", "6772199409")
 
 def get_token():
@@ -83,13 +83,19 @@ def main():
     build_id = target_build["id"]
     print(f"Using build: {target_build['attributes'].get('version')} ({build_id})")
 
-    r = requests.get(f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions?filter[appStoreState]=PREPARE_FOR_SUBMISSION", headers=headers)
-    versions = r.json().get("data", [])
+    versions = []
+    for state in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED"):
+        r = requests.get(
+            f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions?filter[appStoreState]={state}",
+            headers=headers,
+        )
+        r.raise_for_status()
+        versions.extend(r.json().get("data", []))
 
     if versions:
         version_id = versions[0]["id"]
     else:
-        print("No PREPARE_FOR_SUBMISSION version found")
+        print("No editable App Store version found")
         return 4
 
     r = requests.patch(

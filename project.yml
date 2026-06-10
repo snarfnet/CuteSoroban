@@ -6,15 +6,10 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
-packages:
-  GoogleMobileAds:
-    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
-    from: "13.0.0"
-
 settings:
   base:
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "38"
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: 83VGKGSQUH
     CODE_SIGN_STYLE: Automatic
@@ -28,8 +23,6 @@ settings:
     INFOPLIST_KEY_CFBundleDisplayName: "Cute Soroban"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.education"
     INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
-    INFOPLIST_KEY_GADApplicationIdentifier: "ca-app-pub-9404799280370656~3553970880"
-    INFOPLIST_KEY_NSUserTrackingUsageDescription: "広告の最適化のため、トラッキングの許可をお願いしています。"
 
 targets:
   CatSoroban:
@@ -41,6 +34,3 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.snarfnet.cutesoroban
         TARGETED_DEVICE_FAMILY: "1,2"
-    dependencies:
-      - package: GoogleMobileAds
-        product: GoogleMobileAds

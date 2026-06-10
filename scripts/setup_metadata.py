@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set up App Store Connect metadata for Cat Soroban."""
+"""Set up App Store Connect metadata for Cute Soroban."""
 import os
 import sys
 import time
@@ -10,9 +10,9 @@ import requests
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "WDXGY9WX55")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID", "2be0734f-943a-4d61-9dc9-5d9045c46fec")
-BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.catsoroban")
+BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.cutesoroban")
 APP_ID = os.environ.get("ASC_APP_ID", "6772199409")
-APP_NAME = os.environ.get("ASC_APP_NAME", "Cat Soroban")
+APP_NAME = os.environ.get("ASC_APP_NAME", "Cute Soroban")
 VERSION_STRING = os.environ.get("ASC_VERSION", "1.0")
 SUPPORT_URL = os.environ.get("ASC_SUPPORT_URL", "https://snarfnet.github.io/")
 MARKETING_URL = os.environ.get("ASC_MARKETING_URL", SUPPORT_URL)
@@ -49,35 +49,23 @@ def request(method, url, headers, **kwargs):
 def find_app(headers):
     if APP_ID:
         response = request("GET", f"https://api.appstoreconnect.apple.com/v1/apps/{APP_ID}", headers)
-        app = response.json().get("data", {})
-        found_bundle_id = app.get("attributes", {}).get("bundleId")
+        found_bundle_id = response.json().get("data", {}).get("attributes", {}).get("bundleId")
         if found_bundle_id and found_bundle_id != BUNDLE_ID:
             print(f"Warning: App ID {APP_ID} bundle ID is {found_bundle_id}, expected {BUNDLE_ID}")
         return APP_ID
 
-    response = request(
-        "GET",
-        f"https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]={BUNDLE_ID}",
-        headers,
-    )
+    response = request("GET", f"https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]={BUNDLE_ID}", headers)
     apps = response.json().get("data", [])
     if apps:
         return apps[0]["id"]
 
     print(f"App not found in App Store Connect: {BUNDLE_ID}")
-    print("Create the app in App Store Connect with:")
-    print(f"- Name: {APP_NAME}")
-    print(f"- Bundle ID: {BUNDLE_ID}")
-    print("- SKU: catsoroban")
+    print(f"Create the app as {APP_NAME}, SKU cutesoroban.")
     return None
 
 
 def ensure_version(headers, app_id):
-    response = request(
-        "GET",
-        f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions",
-        headers,
-    )
+    response = request("GET", f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions", headers)
     versions = response.json().get("data", [])
     for version in versions:
         state = version["attributes"].get("appStoreState")
@@ -113,20 +101,13 @@ def upsert_localization(headers, version_id, locale, attrs):
         f"https://api.appstoreconnect.apple.com/v1/appStoreVersions/{version_id}/appStoreVersionLocalizations",
         headers,
     )
-    locs = response.json().get("data", [])
-    for loc in locs:
+    for loc in response.json().get("data", []):
         if loc["attributes"].get("locale") == locale:
             request(
                 "PATCH",
                 f"https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/{loc['id']}",
                 headers,
-                json={
-                    "data": {
-                        "type": "appStoreVersionLocalizations",
-                        "id": loc["id"],
-                        "attributes": attrs,
-                    }
-                },
+                json={"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": attrs}},
             )
             print(f"{locale} localization updated")
             return
@@ -139,9 +120,7 @@ def upsert_localization(headers, version_id, locale, attrs):
             "data": {
                 "type": "appStoreVersionLocalizations",
                 "attributes": {"locale": locale, **attrs},
-                "relationships": {
-                    "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}
-                },
+                "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}},
             }
         },
     )
@@ -155,10 +134,7 @@ def set_age_rating(headers, app_id):
         return
 
     info_id = infos[0]["id"]
-    response = requests.get(
-        f"https://api.appstoreconnect.apple.com/v1/appInfos/{info_id}/ageRatingDeclaration",
-        headers=headers,
-    )
+    response = requests.get(f"https://api.appstoreconnect.apple.com/v1/appInfos/{info_id}/ageRatingDeclaration", headers=headers)
     if response.status_code != 200:
         print(f"Age rating not updated: {response.status_code}")
         return
@@ -173,7 +149,7 @@ def set_age_rating(headers, app_id):
                 "type": "ageRatingDeclarations",
                 "id": age_id,
                 "attributes": {
-                    "advertising": True,
+                    "advertising": False,
                     "alcoholTobaccoOrDrugUseOrReferences": "NONE",
                     "contests": "NONE",
                     "gambling": False,
@@ -213,42 +189,28 @@ def main():
         "PATCH",
         f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}",
         headers,
-        json={
-            "data": {
-                "type": "apps",
-                "id": app_id,
-                "attributes": {"primaryLocale": "ja"},
-            }
-        },
+        json={"data": {"type": "apps", "id": app_id, "attributes": {"primaryLocale": "ja"}}},
     )
     print(f"App: {app_id}")
 
     version_id = ensure_version(headers, app_id)
     ja_attrs = {
         "description": (
-            "猫の駒で楽しく計算できる、かわいいそろばんアプリです。\n\n"
-            "13桁のそろばんを、ふわふわの猫たちを動かしながら使えます。"
-            "駒を動かすたびに短くニャーと鳴るので、練習が少し楽しくなります。\n\n"
-            "使い方:\n"
-            "- 猫の駒をタップ、または上下にスライド\n"
-            "- 上の駒は5、下の駒は1を表します\n"
-            "- Resetボタンで全ての駒を戻せます\n\n"
-            "暗算やそろばん練習、算数の学習に。見た目はかわいく、操作はシンプルです。"
+            "猫の珠を動かして計算できる、かわいいそろばんアプリです。\n\n"
+            "13桁のそろばんを、指でタップまたは上下にスライドして使えます。"
+            "上の珠は5、下の珠は1を表します。Resetボタンでいつでも最初の状態に戻せます。\n\n"
+            "暗算やそろばん練習、数のしくみを学ぶ時間に使いやすいシンプルな道具です。"
         ),
-        "keywords": "そろばん,猫,計算,暗算,算数,学習,教育,かわいい,アバカス,知育",
+        "keywords": "そろばん,猫,計算,暗算,算数,学習,教育,かわいい,アバカス,数字",
         "marketingUrl": MARKETING_URL,
         "supportUrl": SUPPORT_URL,
     }
     en_attrs = {
         "description": (
             "A cute cat-themed soroban app for simple abacus practice.\n\n"
-            "Move fluffy cat beads across 13 columns to calculate. "
-            "Each move plays a short meow, making practice feel playful and easy to repeat.\n\n"
-            "How to use:\n"
-            "- Tap or slide the cat beads up and down\n"
-            "- Top bead = 5, bottom beads = 1 each\n"
-            "- Reset clears all beads\n\n"
-            "Great for mental math practice, learning arithmetic, or using a cheerful soroban tool."
+            "Move cat beads across 13 columns to calculate. The top bead counts as 5, and each lower bead counts as 1. "
+            "Use Reset whenever you want to clear the board.\n\n"
+            "It is a simple tool for mental math practice, arithmetic learning, and getting familiar with a soroban."
         ),
         "keywords": "soroban,abacus,cat,calculator,math,cute,kawaii,education,arithmetic,counting",
         "marketingUrl": MARKETING_URL,

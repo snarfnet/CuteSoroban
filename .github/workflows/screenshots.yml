@@ -1,4 +1,4 @@
-name: Take Screenshots & Upload to ASC
+name: Take Real App Screenshots
 
 on:
   workflow_dispatch:
@@ -8,101 +8,107 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Select Xcode
-      run: |
-        XCODE_APP=$(ls /Applications/ | grep -E "^Xcode_2[6-9]|^Xcode_[3-9][0-9]" | sort -V | tail -1)
-        if [ -n "$XCODE_APP" ]; then
-          sudo xcode-select -s "/Applications/$XCODE_APP"
-        else
+      - name: Select Xcode
+        run: |
           XCODE_APP=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
           sudo xcode-select -s "/Applications/$XCODE_APP"
-        fi
-        xcodebuild -version
+          xcodebuild -version
 
-    - name: Install XcodeGen
-      run: brew install xcodegen
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
-    - name: Generate Xcode project
-      run: xcodegen generate
+      - name: Generate Xcode project
+        run: xcodegen generate
 
-    - name: Find Simulators
-      run: |
-        IPHONE_ID=$(xcrun simctl list devices available | grep "iPhone 16 Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
-        if [ -z "$IPHONE_ID" ]; then
-          IPHONE_ID=$(xcrun simctl list devices available | grep "iPhone" | grep "Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
-        fi
-        IPAD_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "13" | head -1 | grep -oE '[A-F0-9-]{36}')
-        if [ -z "$IPAD_ID" ]; then
-          IPAD_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "12.9" | head -1 | grep -oE '[A-F0-9-]{36}')
-        fi
-        if [ -z "$IPAD_ID" ]; then
-          IPAD_ID=$(xcrun simctl list devices available | grep "iPad" | head -1 | grep -oE '[A-F0-9-]{36}')
-        fi
-        echo "IPHONE_ID=$IPHONE_ID" >> $GITHUB_ENV
-        echo "IPAD_ID=$IPAD_ID" >> $GITHUB_ENV
-        echo "iPhone: $IPHONE_ID / iPad: $IPAD_ID"
+      - name: Find simulators
+        run: |
+          IPHONE_ID=$(xcrun simctl list devices available | grep "iPhone 17 Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
+          if [ -z "$IPHONE_ID" ]; then
+            IPHONE_ID=$(xcrun simctl list devices available | grep "iPhone" | grep "Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
+          fi
+          IPAD_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "13" | head -1 | grep -oE '[A-F0-9-]{36}')
+          if [ -z "$IPAD_ID" ]; then
+            IPAD_ID=$(xcrun simctl list devices available | grep "iPad" | head -1 | grep -oE '[A-F0-9-]{36}')
+          fi
+          test -n "$IPHONE_ID"
+          test -n "$IPAD_ID"
+          echo "IPHONE_ID=$IPHONE_ID" >> "$GITHUB_ENV"
+          echo "IPAD_ID=$IPAD_ID" >> "$GITHUB_ENV"
 
-    - name: Build for iPhone Simulator
-      run: |
-        xcodebuild build \
-          -scheme CatSoroban \
-          -configuration Debug \
-          -destination "id=$IPHONE_ID" \
-          -derivedDataPath build/DerivedData \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+      - name: Build for simulators
+        run: |
+          xcodebuild build \
+            -project CatSoroban.xcodeproj \
+            -scheme CatSoroban \
+            -configuration Debug \
+            -destination "id=$IPHONE_ID" \
+            -derivedDataPath build/DerivedData-iPhone \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+          xcodebuild build \
+            -project CatSoroban.xcodeproj \
+            -scheme CatSoroban \
+            -configuration Debug \
+            -destination "id=$IPAD_ID" \
+            -derivedDataPath build/DerivedData-iPad \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
-    - name: Take iPhone Screenshot
-      run: |
-        xcrun simctl boot "$IPHONE_ID" || true
-        xcrun simctl bootstatus "$IPHONE_ID" -b
-        APP_PATH=$(find build/DerivedData -name "CatSoroban.app" -type d | head -1)
-        mkdir -p screenshots
-        xcrun simctl install "$IPHONE_ID" "$APP_PATH"
-        xcrun simctl launch "$IPHONE_ID" com.snarfnet.cutesoroban
-        sleep 10
-        xcrun simctl io "$IPHONE_ID" screenshot screenshots/iphone_67.png
-        xcrun simctl shutdown "$IPHONE_ID" || true
+      - name: Capture real app screenshots
+        run: |
+          set -euo pipefail
+          mkdir -p screenshots
 
-    - name: Build for iPad Simulator
-      run: |
-        xcodebuild build \
-          -scheme CatSoroban \
-          -configuration Debug \
-          -destination "id=$IPAD_ID" \
-          -derivedDataPath build/DerivedDataiPad \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcpretty || true
+          capture() {
+            local device_id="$1"
+            local app_path="$2"
+            local prefix="$3"
 
-    - name: Take iPad Screenshot
-      run: |
-        xcrun simctl boot "$IPAD_ID" || true
-        xcrun simctl bootstatus "$IPAD_ID" -b
-        APP_PATH=$(find build/DerivedDataiPad -name "CatSoroban.app" -type d | head -1)
-        if [ -z "$APP_PATH" ]; then
-          APP_PATH=$(find build/DerivedData -name "CatSoroban.app" -type d | head -1)
-        fi
-        xcrun simctl install "$IPAD_ID" "$APP_PATH"
-        xcrun simctl launch "$IPAD_ID" com.snarfnet.cutesoroban
-        sleep 10
-        xcrun simctl io "$IPAD_ID" screenshot screenshots/ipad_129.png
+            xcrun simctl boot "$device_id" || true
+            xcrun simctl bootstatus "$device_id" -b
+            xcrun simctl install "$device_id" "$app_path"
 
-    - name: Upload screenshots artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: screenshots/
+            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban
+            sleep 4
+            xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_01.png"
 
-    - name: Upload to App Store Connect
-      env:
-        ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-      run: |
-        echo "$ASC_KEY_P8" > /tmp/asc_key.p8
-        pip install PyJWT requests cryptography
-        python scripts/upload_screenshots.py screenshots
-        rm /tmp/asc_key.p8
+            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban --screenshot-preset=practice
+            sleep 4
+            xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_02.png"
+
+            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban --screenshot-preset=full
+            sleep 4
+            xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_03.png"
+          }
+
+          IPHONE_APP=$(find build/DerivedData-iPhone -name "CatSoroban.app" -type d | head -1)
+          IPAD_APP=$(find build/DerivedData-iPad -name "CatSoroban.app" -type d | head -1)
+          capture "$IPHONE_ID" "$IPHONE_APP" iphone_67
+          capture "$IPAD_ID" "$IPAD_APP" ipad_129
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-app-screenshots
+          path: screenshots/
+
+      - name: Upload to App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+        run: |
+          if [ -n "${ASC_KEY_P8:-}" ]; then
+            printf "%s" "$ASC_KEY_P8" > /tmp/asc_key.p8
+          else
+            printf "%s" "$ASC_API_KEY_CONTENT" | base64 -D > /tmp/asc_key.p8
+          fi
+          python3 -m pip install PyJWT requests cryptography
+          python3 scripts/upload_screenshots.py screenshots
+          rm /tmp/asc_key.p8
