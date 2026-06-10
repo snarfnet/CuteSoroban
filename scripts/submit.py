@@ -109,6 +109,28 @@ def add_review_submission_item(headers, submission_id, version_id):
         },
     )
 
+def add_review_submission_item_with_retry(headers, submission_id, version_id):
+    last_error = ""
+    for attempt in range(20):
+        r = add_review_submission_item(headers, submission_id, version_id)
+        print(f"Add reviewSubmissionItem: {r.status_code}")
+        if r.status_code in (200, 201):
+            return True
+
+        last_error = short_error(r)
+        print(f"Add reviewSubmissionItem failed: {last_error}")
+        lower_error = last_error.lower()
+        if "already exists" in lower_error or "already been taken" in lower_error:
+            return True
+        if "screenshot_uploads_in_progress" not in lower_error and "upload" not in lower_error:
+            return False
+
+        print(f"Screenshots are still processing ({attempt + 1}/20). Waiting...")
+        time.sleep(30)
+
+    print(f"Add reviewSubmissionItem failed after waiting: {last_error}")
+    return False
+
 def finish_review_submission(headers, submission_id):
     last_error = ""
     for attempt in range(20):
@@ -262,13 +284,8 @@ def main():
         return 5
 
     remove_review_submission_items(headers, sub_id)
-    r = add_review_submission_item(headers, sub_id, version_id)
-    print(f"Add reviewSubmissionItem: {r.status_code}")
-    if r.status_code not in (200, 201):
-        error = short_error(r)
-        print(f"Add reviewSubmissionItem failed: {error}")
-        if "already exists" not in error.lower() and "already been taken" not in error.lower():
-            return 6
+    if not add_review_submission_item_with_retry(headers, sub_id, version_id):
+        return 6
 
     return 0 if finish_review_submission(headers, sub_id) else 7
 
