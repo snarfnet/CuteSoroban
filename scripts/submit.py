@@ -25,6 +25,148 @@ def get_token():
     payload = {"iss": ISSUER_ID, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"}
     return jwt.encode(payload, key, algorithm="ES256", headers={"kid": KEY_ID})
 
+def short_error(response):
+    try:
+        payload = response.json()
+        errors = payload.get("errors") or []
+        if errors:
+            parts = []
+            for error in errors[:3]:
+                code = error.get("code", "UNKNOWN")
+                detail = error.get("detail") or error.get("title") or ""
+                parts.append(f"{code}: {detail}")
+                associated = (error.get("meta") or {}).get("associatedErrors") or {}
+                for path, path_errors in associated.items():
+                    for path_error in path_errors[:3]:
+                        path_code = path_error.get("code", "UNKNOWN")
+                        path_detail = path_error.get("detail") or path_error.get("title") or ""
+                        parts.append(f"{path} {path_code}: {path_detail}")
+            return " | ".join(parts)
+    except Exception:
+        pass
+    return response.text[:500]
+
+def api(headers, method, path, **kwargs):
+    return requests.request(
+        method,
+        f"https://api.appstoreconnect.apple.com/v1{path}",
+        headers=headers,
+        **kwargs,
+    )
+
+def reusable_review_submission_id(headers, app_id):
+    r = api(headers, "GET", f"/reviewSubmissions?filter[app]={app_id}&filter[platform]=IOS&limit=200")
+    if r.status_code != 200:
+        print(f"Could not list review submissions: {r.status_code} {short_error(r)}")
+        return None
+
+    submissions = r.json().get("data") or []
+    print(f"Found reviewSubmissions: {len(submissions)}")
+    for submission in submissions:
+        state = (submission.get("attributes") or {}).get("state")
+        submission_id = submission.get("id")
+        print(f"ReviewSubmission {submission_id} state={state}")
+        if state in ("WAITING_FOR_REVIEW", "IN_REVIEW"):
+            print(f"Already submitted for review: {submission_id} state={state}")
+            return "already-submitted"
+        if state == "READY_FOR_REVIEW":
+            return submission_id
+    return None
+
+def remove_review_submission_items(headers, submission_id):
+    r = api(headers, "GET", f"/reviewSubmissions/{submission_id}/items?limit=50")
+    if r.status_code != 200:
+        print(f"Could not list review submission items: {r.status_code} {short_error(r)}")
+        return False
+
+    items = r.json().get("data") or []
+    print(f"Removing {len(items)} reviewSubmission item(s)")
+    ok = True
+    for item in items:
+        item_id = item.get("id")
+        if not item_id:
+            continue
+        r = api(headers, "DELETE", f"/reviewSubmissionItems/{item_id}")
+        print(f"Delete reviewSubmissionItem {item_id}: {r.status_code}")
+        ok = ok and r.status_code in (200, 202, 204, 404)
+        if r.status_code not in (200, 202, 204, 404):
+            print(f"Delete failed: {short_error(r)}")
+    return ok
+
+def add_review_submission_item(headers, submission_id, version_id):
+    return api(
+        headers,
+        "POST",
+        "/reviewSubmissionItems",
+        json={
+            "data": {
+                "type": "reviewSubmissionItems",
+                "relationships": {
+                    "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                    "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}},
+                },
+            }
+        },
+    )
+
+def finish_review_submission(headers, submission_id):
+    last_error = ""
+    for attempt in range(20):
+        r = api(
+            headers,
+            "PATCH",
+            f"/reviewSubmissions/{submission_id}",
+            json={
+                "data": {
+                    "type": "reviewSubmissions",
+                    "id": submission_id,
+                    "attributes": {"submitted": True},
+                }
+            },
+        )
+        if r.status_code in (200, 201):
+            state = r.json()["data"]["attributes"].get("state")
+            print(f"Submitted for review! State: {state}")
+            return True
+
+        last_error = short_error(r)
+        retryable = "try again later" in last_error.lower() or "not ready" in last_error.lower()
+        if not retryable:
+            print(f"Submit failed: {r.status_code} {last_error}")
+            return False
+        print(f"Submission not ready yet ({attempt + 1}/20). Waiting...")
+        time.sleep(30)
+
+    print(f"Submit failed after waiting: {last_error}")
+    return False
+
+def create_or_reuse_review_submission(headers, app_id):
+    r = api(
+        headers,
+        "POST",
+        "/reviewSubmissions",
+        json={
+            "data": {
+                "type": "reviewSubmissions",
+                "attributes": {"platform": "IOS"},
+                "relationships": {
+                    "app": {"data": {"type": "apps", "id": app_id}}
+                },
+            }
+        },
+    )
+    print(f"Create reviewSubmission: {r.status_code}")
+    if r.status_code in (200, 201):
+        return r.json()["data"]["id"]
+
+    print(f"Create reviewSubmission failed: {short_error(r)}")
+    submission_id = reusable_review_submission_id(headers, app_id)
+    if submission_id == "already-submitted":
+        return submission_id
+    if submission_id:
+        print(f"Reusing reviewSubmission: {submission_id}")
+    return submission_id
+
 def main():
     token = get_token()
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -113,45 +255,22 @@ def main():
     )
     print(f"Attach build: {r.status_code}")
 
-    r = requests.post(
-        "https://api.appstoreconnect.apple.com/v1/reviewSubmissions",
-        headers=headers,
-        json={
-            "data": {
-                "type": "reviewSubmissions",
-                "attributes": {"platform": "IOS"},
-                "relationships": {
-                    "app": {"data": {"type": "apps", "id": app_id}}
-                }
-            }
-        }
-    )
-    print(f"Submit for review: {r.status_code}")
-    if r.status_code in (200, 201):
-        sub_id = r.json()["data"]["id"]
-        requests.post(
-            "https://api.appstoreconnect.apple.com/v1/reviewSubmissionItems",
-            headers=headers,
-            json={
-                "data": {
-                    "type": "reviewSubmissionItems",
-                    "relationships": {
-                        "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub_id}},
-                        "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}
-                    }
-                }
-            }
-        )
-        requests.patch(
-            f"https://api.appstoreconnect.apple.com/v1/reviewSubmissions/{sub_id}",
-            headers=headers,
-            json={"data": {"type": "reviewSubmissions", "id": sub_id, "attributes": {"submitted": True}}}
-        )
-        print("Submitted for review!")
+    sub_id = create_or_reuse_review_submission(headers, app_id)
+    if sub_id == "already-submitted":
         return 0
-    else:
-        print(r.text[:500])
+    if not sub_id:
         return 5
+
+    remove_review_submission_items(headers, sub_id)
+    r = add_review_submission_item(headers, sub_id, version_id)
+    print(f"Add reviewSubmissionItem: {r.status_code}")
+    if r.status_code not in (200, 201):
+        error = short_error(r)
+        print(f"Add reviewSubmissionItem failed: {error}")
+        if "already exists" not in error.lower() and "already been taken" not in error.lower():
+            return 6
+
+    return 0 if finish_review_submission(headers, sub_id) else 7
 
 if __name__ == "__main__":
     sys.exit(main())
