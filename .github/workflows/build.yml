@@ -147,7 +147,7 @@ jobs:
 
           python3 -m venv .venv
           source .venv/bin/activate
-          python -m pip install PyJWT requests cryptography
+          python -m pip install PyJWT requests cryptography Pillow
           python scripts/upload_screenshots.py screenshots
 
       - name: Submit for App Review

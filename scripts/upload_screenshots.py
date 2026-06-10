@@ -2,6 +2,7 @@
 import hashlib
 import os
 import sys
+import tempfile
 import time
 
 import jwt
@@ -93,7 +94,22 @@ def get_or_create_set(loc_id, display_type):
     return response.json()["data"]["id"]
 
 
-def upload_screenshot(set_id, filepath):
+def normalized_screenshot(filepath, target_size):
+    from PIL import Image
+
+    image = Image.open(filepath).convert("RGB")
+    if image.size != target_size:
+        image = image.resize(target_size, Image.Resampling.LANCZOS)
+
+    normalized_dir = os.path.join(tempfile.gettempdir(), "cutesoroban_screenshots")
+    os.makedirs(normalized_dir, exist_ok=True)
+    normalized_path = os.path.join(normalized_dir, os.path.basename(filepath))
+    image.save(normalized_path, "PNG")
+    return normalized_path
+
+
+def upload_screenshot(set_id, filepath, target_size):
+    filepath = normalized_screenshot(filepath, target_size)
     with open(filepath, "rb") as f:
         file_data = f.read()
 
@@ -170,8 +186,14 @@ def latest_editable_version_id():
 def main():
     screenshot_dir = sys.argv[1] if len(sys.argv) > 1 else "screenshots"
     screenshots = {
-        "APP_IPHONE_67": ["iphone_67_01.png", "iphone_67_02.png", "iphone_67_03.png"],
-        "APP_IPAD_PRO_3GEN_129": ["ipad_129_01.png", "ipad_129_02.png", "ipad_129_03.png"],
+        "APP_IPHONE_67": {
+            "filenames": ["iphone_67_01.png", "iphone_67_02.png", "iphone_67_03.png"],
+            "target_size": (1290, 2796),
+        },
+        "APP_IPAD_PRO_3GEN_129": {
+            "filenames": ["ipad_129_01.png", "ipad_129_02.png", "ipad_129_03.png"],
+            "target_size": (2064, 2752),
+        },
     }
 
     version_id = latest_editable_version_id()
@@ -179,14 +201,15 @@ def main():
     for loc in locs:
         loc_id = loc["id"]
         print(f"Processing locale: {loc['attributes']['locale']}")
-        for display_type, filenames in screenshots.items():
+        for display_type, config in screenshots.items():
+            filenames = config["filenames"]
             paths = [os.path.join(screenshot_dir, name) for name in filenames]
             existing_paths = [path for path in paths if os.path.exists(path)]
             if not existing_paths:
                 continue
             set_id = get_or_create_set(loc_id, display_type)
             for path in existing_paths:
-                upload_screenshot(set_id, path)
+                upload_screenshot(set_id, path, config["target_size"])
 
     print("Done")
     return 0

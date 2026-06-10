@@ -25,6 +25,6 @@ jobs:
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
-          python -m pip install PyJWT requests cryptography
+          python -m pip install PyJWT requests cryptography Pillow
           python scripts/setup_metadata.py
           python scripts/submit.py "${{ inputs.buildNumber }}"
