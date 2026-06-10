@@ -28,14 +28,8 @@ jobs:
           if [ -z "$IPHONE_ID" ]; then
             IPHONE_ID=$(xcrun simctl list devices available | grep "iPhone" | grep "Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
           fi
-          IPAD_ID=$(xcrun simctl list devices available | grep "iPad Pro" | grep "13" | head -1 | grep -oE '[A-F0-9-]{36}')
-          if [ -z "$IPAD_ID" ]; then
-            IPAD_ID=$(xcrun simctl list devices available | grep "iPad" | head -1 | grep -oE '[A-F0-9-]{36}')
-          fi
           test -n "$IPHONE_ID"
-          test -n "$IPAD_ID"
           echo "IPHONE_ID=$IPHONE_ID" >> "$GITHUB_ENV"
-          echo "IPAD_ID=$IPAD_ID" >> "$GITHUB_ENV"
 
       - name: Build for simulators
         run: |
@@ -45,15 +39,6 @@ jobs:
             -configuration Debug \
             -destination "id=$IPHONE_ID" \
             -derivedDataPath build/DerivedData-iPhone \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-          xcodebuild build \
-            -project CatSoroban.xcodeproj \
-            -scheme CatSoroban \
-            -configuration Debug \
-            -destination "id=$IPAD_ID" \
-            -derivedDataPath build/DerivedData-iPad \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
@@ -89,11 +74,8 @@ jobs:
           }
 
           IPHONE_APP=$(find build/DerivedData-iPhone -name "CatSoroban.app" -type d | head -1)
-          IPAD_APP=$(find build/DerivedData-iPad -name "CatSoroban.app" -type d | head -1)
           capture "$IPHONE_ID" "$IPHONE_APP" iphone_67
-          capture "$IPAD_ID" "$IPAD_APP" ipad_129
           sips -z 2796 1290 screenshots/iphone_67_*.png
-          sips -z 2732 2048 screenshots/ipad_129_*.png
 
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4

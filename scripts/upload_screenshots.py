@@ -208,10 +208,6 @@ def main():
             "filenames": ["iphone_67_01.png", "iphone_67_02.png", "iphone_67_03.png"],
             "target_size": (1290, 2796),
         },
-        "APP_IPAD_PRO_129": {
-            "filenames": ["ipad_129_01.png", "ipad_129_02.png", "ipad_129_03.png"],
-            "target_size": (2048, 2732),
-        },
     }
 
     version_id = latest_editable_version_id()
@@ -220,6 +216,7 @@ def main():
         loc_id = loc["id"]
         print(f"Processing locale: {loc['attributes']['locale']}")
         delete_sets(loc_id, "APP_IPAD_PRO_3GEN_129")
+        delete_sets(loc_id, "APP_IPAD_PRO_129")
         for display_type, config in screenshots.items():
             filenames = config["filenames"]
             paths = [os.path.join(screenshot_dir, name) for name in filenames]
