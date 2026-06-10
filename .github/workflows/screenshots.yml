@@ -109,6 +109,8 @@ jobs:
           else
             printf "%s" "$ASC_API_KEY_CONTENT" | base64 -D > /tmp/asc_key.p8
           fi
-          python3 -m pip install PyJWT requests cryptography
-          python3 scripts/upload_screenshots.py screenshots
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python -m pip install PyJWT requests cryptography
+          python scripts/upload_screenshots.py screenshots
           rm /tmp/asc_key.p8

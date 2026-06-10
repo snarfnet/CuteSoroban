@@ -145,13 +145,15 @@ jobs:
           capture "$IPHONE_ID" "$IPHONE_APP" iphone_67
           capture "$IPAD_ID" "$IPAD_APP" ipad_129
 
-          python3 -m pip install PyJWT requests cryptography
-          python3 scripts/upload_screenshots.py screenshots
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python -m pip install PyJWT requests cryptography
+          python scripts/upload_screenshots.py screenshots
 
       - name: Submit for App Review
         env:
           ASC_P8_PATH: ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8
         run: |
-          python3 -m pip install PyJWT requests cryptography
-          python3 scripts/setup_metadata.py
-          python3 scripts/submit.py "${{ github.run_number }}"
+          source .venv/bin/activate
+          python scripts/setup_metadata.py
+          python scripts/submit.py "${{ github.run_number }}"
