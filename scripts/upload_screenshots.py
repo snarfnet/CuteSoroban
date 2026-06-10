@@ -94,6 +94,24 @@ def get_or_create_set(loc_id, display_type):
     return response.json()["data"]["id"]
 
 
+def delete_sets(loc_id, display_type):
+    sets = list_all(
+        f"/appStoreVersionLocalizations/{loc_id}/appScreenshotSets?filter[screenshotDisplayType]={display_type}&limit=200"
+    )
+    for screenshot_set in sets:
+        set_id = screenshot_set["id"]
+        for screenshot in list_all(f"/appScreenshotSets/{set_id}/appScreenshots?limit=200"):
+            try:
+                api("DELETE", f"/appScreenshots/{screenshot['id']}")
+            except RuntimeError as error:
+                print(f"  Could not delete old screenshot {screenshot['id']}: {error}")
+        try:
+            api("DELETE", f"/appScreenshotSets/{set_id}")
+            print(f"  Deleted old {display_type} screenshot set")
+        except RuntimeError as error:
+            print(f"  Could not delete old {display_type} set: {error}")
+
+
 def normalized_screenshot(filepath, target_size):
     from PIL import Image
 
@@ -190,9 +208,9 @@ def main():
             "filenames": ["iphone_67_01.png", "iphone_67_02.png", "iphone_67_03.png"],
             "target_size": (1290, 2796),
         },
-        "APP_IPAD_PRO_3GEN_129": {
+        "APP_IPAD_PRO_129": {
             "filenames": ["ipad_129_01.png", "ipad_129_02.png", "ipad_129_03.png"],
-            "target_size": (2064, 2752),
+            "target_size": (2048, 2732),
         },
     }
 
@@ -201,6 +219,7 @@ def main():
     for loc in locs:
         loc_id = loc["id"]
         print(f"Processing locale: {loc['attributes']['locale']}")
+        delete_sets(loc_id, "APP_IPAD_PRO_3GEN_129")
         for display_type, config in screenshots.items():
             filenames = config["filenames"]
             paths = [os.path.join(screenshot_dir, name) for name in filenames]

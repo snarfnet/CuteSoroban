@@ -93,7 +93,7 @@ jobs:
           capture "$IPHONE_ID" "$IPHONE_APP" iphone_67
           capture "$IPAD_ID" "$IPAD_APP" ipad_129
           sips -z 2796 1290 screenshots/iphone_67_*.png
-          sips -z 2752 2064 screenshots/ipad_129_*.png
+          sips -z 2732 2048 screenshots/ipad_129_*.png
 
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
