@@ -119,8 +119,8 @@ def upload_screenshot(set_id, filepath):
         offset = operation["offset"]
         length = operation["length"]
         chunk = file_data[offset : offset + length]
-        upload = requests.put(operation["url"], headers=upload_headers, data=chunk)
-        if upload.status_code not in (200, 201):
+        upload = requests.put(operation["url"], headers=upload_headers, data=chunk, timeout=120)
+        if not upload.ok:
             raise RuntimeError(f"Screenshot chunk upload failed: {upload.status_code}")
 
     checksum = hashlib.md5(file_data).hexdigest()
@@ -135,6 +135,24 @@ def upload_screenshot(set_id, filepath):
             }
         },
     )
+
+    for attempt in range(60):
+        response = api("GET", f"/appScreenshots/{screenshot['id']}")
+        delivery = response.json()["data"]["attributes"].get("assetDeliveryState")
+        if not delivery:
+            break
+
+        state = delivery.get("state")
+        if state == "COMPLETE":
+            break
+        if state == "FAILED":
+            raise RuntimeError(f"Screenshot processing failed: {delivery.get('errors')}")
+
+        print(f"  Processing {os.path.basename(filepath)}: {state or 'PENDING'} ({attempt + 1}/60)")
+        time.sleep(10)
+    else:
+        raise RuntimeError(f"Screenshot processing timed out: {os.path.basename(filepath)}")
+
     print(f"  Uploaded {os.path.basename(filepath)}")
 
 
