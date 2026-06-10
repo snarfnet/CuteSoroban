@@ -1,0 +1,30 @@
+name: Submit Existing Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildNumber:
+        description: "Build number to submit. Leave blank for latest valid build."
+        required: false
+        type: string
+
+jobs:
+  submit:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up ASC API Key
+        env:
+          ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_API_KEY_CONTENT" | base64 -D > ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8
+
+      - name: Submit existing build
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python -m pip install PyJWT requests cryptography
+          python scripts/setup_metadata.py
+          python scripts/submit.py "${{ inputs.buildNumber }}"
