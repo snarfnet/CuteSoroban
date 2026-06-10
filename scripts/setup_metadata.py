@@ -10,7 +10,7 @@ import requests
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "WDXGY9WX55")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID", "2be0734f-943a-4d61-9dc9-5d9045c46fec")
-BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.cutesoroban")
+BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.catsoroban")
 APP_ID = os.environ.get("ASC_APP_ID", "6772199409")
 APP_NAME = os.environ.get("ASC_APP_NAME", "Cute Soroban")
 VERSION_STRING = os.environ.get("ASC_VERSION", "1.0")
@@ -60,13 +60,22 @@ def find_app(headers):
         return apps[0]["id"]
 
     print(f"App not found in App Store Connect: {BUNDLE_ID}")
-    print(f"Create the app as {APP_NAME}, SKU cutesoroban.")
+    print(f"Create the app as {APP_NAME}, SKU catsoroban.")
     return None
 
 
 def ensure_version(headers, app_id):
     response = request("GET", f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions", headers)
     versions = response.json().get("data", [])
+    matching_versions = [
+        version for version in versions
+        if version["attributes"].get("versionString") == VERSION_STRING
+    ]
+    for version in matching_versions:
+        state = version["attributes"].get("appStoreState")
+        print(f"Version: {version['id']} ({state})")
+        return version["id"]
+
     for version in versions:
         state = version["attributes"].get("appStoreState")
         if state in {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED"}:

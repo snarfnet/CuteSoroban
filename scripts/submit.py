@@ -4,7 +4,8 @@ import jwt, time, requests, sys, os
 
 KEY_ID = os.environ.get("ASC_KEY_ID", "WDXGY9WX55")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID", "2be0734f-943a-4d61-9dc9-5d9045c46fec")
-BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.cutesoroban")
+BUNDLE_ID = os.environ.get("ASC_BUNDLE_ID", "com.snarfnet.catsoroban")
+VERSION_STRING = os.environ.get("ASC_VERSION", "1.0")
 APP_ID = os.environ.get("ASC_APP_ID", "6772199409")
 
 def get_token():
@@ -83,14 +84,21 @@ def main():
     build_id = target_build["id"]
     print(f"Using build: {target_build['attributes'].get('version')} ({build_id})")
 
-    versions = []
-    for state in ("PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED"):
-        r = requests.get(
-            f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions?filter[appStoreState]={state}",
-            headers=headers,
-        )
-        r.raise_for_status()
-        versions.extend(r.json().get("data", []))
+    r = requests.get(
+        f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=200",
+        headers=headers,
+    )
+    r.raise_for_status()
+    all_versions = r.json().get("data", [])
+    versions = [
+        version for version in all_versions
+        if version["attributes"].get("versionString") == VERSION_STRING
+    ]
+    if not versions:
+        versions = [
+            version for version in all_versions
+            if version["attributes"].get("appStoreState") in {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED"}
+        ]
 
     if versions:
         version_id = versions[0]["id"]

@@ -72,18 +72,18 @@ jobs:
             xcrun simctl bootstatus "$device_id" -b
             xcrun simctl install "$device_id" "$app_path"
 
-            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
-            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban
+            xcrun simctl terminate "$device_id" com.snarfnet.catsoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.catsoroban
             sleep 4
             xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_01.png"
 
-            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
-            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban --screenshot-preset=practice
+            xcrun simctl terminate "$device_id" com.snarfnet.catsoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.catsoroban --screenshot-preset=practice
             sleep 4
             xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_02.png"
 
-            xcrun simctl terminate "$device_id" com.snarfnet.cutesoroban || true
-            xcrun simctl launch "$device_id" com.snarfnet.cutesoroban --screenshot-preset=full
+            xcrun simctl terminate "$device_id" com.snarfnet.catsoroban || true
+            xcrun simctl launch "$device_id" com.snarfnet.catsoroban --screenshot-preset=full
             sleep 4
             xcrun simctl io "$device_id" screenshot "screenshots/${prefix}_03.png"
           }
